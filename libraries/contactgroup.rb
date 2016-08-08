@@ -35,6 +35,7 @@ class Nagios
       @contactgroup_name = contactgroup_name
       @members = {}
       @contactgroup_members = {}
+      super()
     end
 
     def contactgroup_members_list
@@ -67,6 +68,23 @@ class Nagios
         push_object(obj, @contactgroup_members)
       end
     end
+
+    def pop(obj)
+      return if obj == self
+      case obj
+      when Nagios::Contact
+        if @members.keys?(obj.to_s)
+          pop_object(obj, @members)
+          pop(self, obj)
+        end
+      when Nagios::Contactgroup
+        if @contactgroups_members.keys?(obj.to_s)
+          pop_object(obj, @contactgroup_members)
+          pop(self, obj)
+        end
+      end
+    end
+    # rubocop:enable MethodLength
 
     def to_s
       contactgroup_name

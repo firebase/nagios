@@ -7,7 +7,7 @@
 # Definition:: nagios_conf
 #
 # Copyright 2009, 37signals
-# Copyright 2009-2013, Chef Software, Inc.
+# Copyright 2009-2016, Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-define :nagios_conf, :variables => {}, :config_subdir => true, :source => nil do
+define :nagios_conf, variables: {}, config_subdir: true, source: nil do
   conf_dir = params[:config_subdir] ? node['nagios']['config_dir'] : node['nagios']['conf_dir']
   params[:source] ||= "#{params[:name]}.cfg.erb"
 
   template "#{conf_dir}/#{params[:name]}.cfg" do
+    cookbook params[:cookbook] if params[:cookbook]
     owner node['nagios']['user']
     group node['nagios']['group']
     source params[:source]

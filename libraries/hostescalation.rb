@@ -38,12 +38,12 @@ class Nagios
                   :escalation_period
 
     def initialize(name)
-      @host_description, @name = name
-      @contacts       = {}
-      @contact_groups = {}
-      @host_name      = {}
-      @hostgroup_name = {}
-      @register       = 0
+      @host_description = name
+      @contacts         = {}
+      @contact_groups   = {}
+      @host_name        = {}
+      @hostgroup_name   = {}
+      super()
     end
 
     def definition
@@ -74,7 +74,6 @@ class Nagios
       update_members(hash, 'hostgroup_name', Nagios::Hostgroup)
     end
 
-    # rubocop:disable MethodLength
     def push(obj)
       case obj
       when Nagios::Host
@@ -89,11 +88,35 @@ class Nagios
         @escalation_period = obj
       end
     end
-    # rubocop:enable MethodLength
 
-    def self.create(name)
-      Nagios.instance.find(Nagios::Hostescalation.new(name))
+    def pop(obj)
+      return if obj == self
+      case obj
+      when Nagios::Host
+        if @host_name.keys?(obj.to_s)
+          pop_object(obj, @host_name)
+          pop(self, obj)
+        end
+      when Nagios::Hostgroup
+        if @hostgroup_name.keys?(obj.to_s)
+          pop_object(obj, @hostgroup_name)
+          pop(self, obj)
+        end
+      when Nagios::Contact
+        if @contacts.keys?(obj.to_s)
+          pop_object(obj, @contacts)
+          pop(self, obj)
+        end
+      when Nagios::Contactgroup
+        if @contact_groups.keys?(obj.to_s)
+          pop_object(obj, @contact_groups)
+          pop(self, obj)
+        end
+      when Nagios::Timeperiod
+        @escalation_period = nil if @escalation_period == obj
+      end
     end
+    # rubocop:enable MethodLength
 
     def to_s
       host_description
@@ -120,9 +143,10 @@ class Nagios
 
     private
 
-    # rubocop:disable MethodLength
     def config_options
       {
+        'name'                  => 'name',
+        'use'                   => 'use',
         'host_description'      => nil,
         'contacts_list'         => 'contacts',
         'contact_groups_list'   => 'contact_groups',
@@ -132,7 +156,8 @@ class Nagios
         'escalation_options'    => 'escalation_options',
         'first_notification'    => 'first_notification',
         'last_notification'     => 'last_notification',
-        'notification_interval' => 'notification_interval'
+        'notification_interval' => 'notification_interval',
+        'register'              => 'register'
       }
     end
     # rubocop:enable MethodLength
@@ -145,3 +170,4 @@ class Nagios
     end
   end
 end
+# rubocop:enable ClassLength

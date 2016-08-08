@@ -21,15 +21,14 @@
 # Search in all environments if multi_environment_monitoring is enabled.
 Chef::Log.info('Beginning search for nodes.  This may take some time depending on your node count')
 
-nodes = []
 multi_env = node['nagios']['monitored_environments']
 multi_env_search = multi_env.empty? ? '' : ' AND (chef_environment:' + multi_env.join(' OR chef_environment:') + ')'
 
-if node['nagios']['multi_environment_monitoring']
-  nodes = search(:node, "name:*#{multi_env_search}")
-else
-  nodes = search(:node, "name:* AND chef_environment:#{node.chef_environment}")
-end
+nodes = if node['nagios']['multi_environment_monitoring']
+          search(:node, "name:*#{multi_env_search}")
+        else
+          search(:node, "name:* AND chef_environment:#{node.chef_environment}")
+        end
 
 if nodes.empty?
   Chef::Log.info('No nodes returned from search, using this node so hosts.cfg has data')
@@ -40,12 +39,13 @@ end
 Nagios.instance.push(node)
 
 # Pushing all nodes into the Nagios.instance model
+exclude_tag = nagios_array(node['nagios']['exclude_tag_host'])
 nodes.each do |n|
-  include = true
-  nagios_array(n.tags).each do |tag|
-    include = false if node['nagios']['exclude_tag_host'].include?(tag)
+  if n.respond_to?('tags')
+    Nagios.instance.push(n) unless nagios_array(n.tags).any? { |tag| exclude_tag.include?(tag) }
+  else
+    Nagios.instance.push(n)
   end
-  Nagios.instance.push(n) if include
 end
 
 # 24x7 timeperiod

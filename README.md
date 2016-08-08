@@ -11,7 +11,7 @@ Installs and configures Nagios server. Chef nodes are automatically discovered u
 Requirements
 ------------
 ### Chef
-Chef version 0.10.10+ and Ohai 0.6.12+ are required.
+Chef version 11+ is required
 
 Because of the heavy use of search, this recipe will not work with Chef Solo, as it cannot do any searches without a server.
 
@@ -22,8 +22,8 @@ The system running this cookbooks should have a role named 'monitoring' so that 
 The functionality that was previously in the nagios::client recipe has been moved to its own NRPE cookbook at https://github.com/schubergphilis/nrpe
 
 ### Platform
-* Debian 6.X, 7.X
-* Ubuntu 10.04, 12.04, 13.04
+* Debian 7+
+* Ubuntu 12.04+
 * Red Hat Enterprise Linux (CentOS/Amazon/Scientific/Oracle) 5.X, 6.X
 
 **Notes**: This cookbook has been tested on the listed platforms. It may work on other platforms with or without modification.
@@ -65,7 +65,7 @@ Example: `default['nagios']['conf']['cfg_dir'] = [ '/etc/nagios/conf.d' , '/usr/
 * `node['nagios']['state_dir']` - Nagios runtime state information, default "/var/lib/nagios3"
 * `node['nagios']['run_dir']` - where pidfiles are stored, default "/var/run/nagios3"
 * `node['nagios']['docroot']` - Nagios webui docroot, default "/usr/share/nagios3/htdocs"
-* `node['nagios']['enable_ssl]` - boolean for whether Nagios web server should be https, default false
+* `node['nagios']['enable_ssl']` - boolean for whether Nagios web server should be https, default false
 * `node['nagios']['ssl_cert_file']` = Location of SSL Certificate File. default "/etc/nagios3/certificates/nagios-server.pem"
 * `node['nagios']['ssl_cert_chain_file']` = Optional location of SSL Intermediate Certificate File. No default.
 * `node['nagios']['ssl_cert_key']`  = Location of SSL Certificate Key. default "/etc/nagios3/certificates/nagios-server.pem"
@@ -99,6 +99,11 @@ Example: `default['nagios']['conf']['cfg_dir'] = [ '/etc/nagios/conf.d' , '/usr/
 * `node['nagios']['ldap_bind_password']` - bind password used with the DN provided for searching ldap.
 * `node['nagios']['ldap_url']` - ldap url and search parameters.
 * `node['nagios']['ldap_authoritative']` - accepts "on" or "off". controls other authentication modules from authenticating the user if this one fails.
+* `node['nagios']['ldap_group_attribute']` - Set the Apache AuthLDAPGroupAttribute directive to a non-default value.
+* `node['nagios']['ldap_group_attribute_is_dn']` - accepts "on" or "off". Set the Apache AuthLDAPGroupAttributeIsDN directive. Apache's default behavior is currently "on."
+* `node['nagios']['ldap_verify_cert']` - accepts "on" or "off". Set the Apache mod_ldap LDAPVerifyServerCert directive. Apache's default behavior is currently "on."
+* `node['nagios']['ldap_trusted_mode']` - Set the Apache mod_ldap LDAPTrustedMode directive.
+* `node['nagios']['ldap_trusted_global_cert']` - Set the Apache mod_ldap LDAPTrustedGlobalCert directive.
 * `node['nagios']['users_databag']` - the databag containing users to search for. defaults to users
 * `node['nagios']['users_databag_group']` - users databag group considered Nagios admins.  defaults to sysadmin
 * `node['nagios']['services_databag']` - the databag containing services to search for. defaults to nagios_services
@@ -152,6 +157,7 @@ Example: `default['nagios']['conf']['cfg_dir'] = [ '/etc/nagios/conf.d' , '/usr/
  * `node['nagios']['cgi']['authorized_for_all_host_commands']`          - Defaults to '*'
  * `node['nagios']['cgi']['default_statusmap_layout']`                  - Defaults to 5
  * `node['nagios']['cgi']['default_statuswrl_layout']`                  - Defaults to 4
+ * `node['nagios']['cgi']['result_limit']`                              - Defaults to 100
  * `node['nagios']['cgi']['escape_html_tags']`                          - Defaults to 0
  * `node['nagios']['cgi']['action_url_target']`                         - Defaults to '_blank'
  * `node['nagios']['cgi']['notes_url_target']`                          - Defaults to '_blank'
@@ -294,7 +300,7 @@ License & Authors
 - Author:: Nathan Haneysmith <nathan@chef.io>
 - Author:: Joshua Timberman <joshua@chef.io>
 - Author:: Seth Chisamore <schisamo@chef.io>
-- Author:: Tim Smith <tim@cozy.co>
+- Author:: Tim Smith <tsmith@chef.io>
 
 ```text
 Copyright 2009, 37signals

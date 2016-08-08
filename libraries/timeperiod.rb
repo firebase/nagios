@@ -60,6 +60,7 @@ class Nagios
       @timeperiod_name = timeperiod_name
       @periods = {}
       @exclude = {}
+      super()
     end
 
     def self.create(name)
@@ -97,6 +98,23 @@ class Nagios
         push_object(obj, @periods) unless obj.period.nil?
       end
     end
+
+    def pop(obj)
+      return if obj == self
+      case obj
+      when Nagios::Timeperiod
+        if @exclude.keys?(obj.to_s)
+          pop_object(obj, @exclude)
+          pop(self, obj)
+        end
+      when Nagios::Timeperiodentry
+        if @periods.keys?(obj.to_s)
+          pop_object(obj, @periods)
+          pop(self, obj)
+        end
+      end
+    end
+    # rubocop:enable MethodLength
 
     def to_s
       timeperiod_name

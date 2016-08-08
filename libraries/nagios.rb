@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# rubocop:disable ClassLength
+
 #
 # This class holds all methods with regard to the nagios model.
 #
@@ -47,7 +47,6 @@ class Nagios
                 :default_service,
                 :default_timeperiod
 
-  # rubocop:disable MethodLength
   def initialize
     @commands            = {}
     @contactgroups       = {}
@@ -58,9 +57,9 @@ class Nagios
     @services            = {}
     @timeperiods         = {}
     @hostdependencies    = {}
-    @hostescalations     = {}
+    @hostescalations     = []
     @servicedependencies = {}
-    @serviceescalations  = {}
+    @serviceescalations  = []
     @resources           = {}
     @host_name_attribute = 'hostname'
     @normalize_hostname  = false
@@ -79,7 +78,6 @@ class Nagios
     Hash[@contacts.sort]
   end
 
-  # rubocop:disable MethodLength
   def delete(hash, key)
     case hash
     when 'command'
@@ -112,7 +110,6 @@ class Nagios
   end
   # rubocop:enable MethodLength
 
-  # rubocop:disable MethodLength
   def find(obj)
     case obj
     when Nagios::Command
@@ -133,12 +130,8 @@ class Nagios
       find_object(obj, @timeperiods)
     when Nagios::Hostdependency
       find_object(obj, @hostdependencies)
-    when Nagios::Hostescalation
-      find_object(obj, @hostescalations)
     when Nagios::Servicedependency
       find_object(obj, @servicedependencies)
-    when Nagios::Serviceescalation
-      find_object(obj, @serviceescalations)
     when Nagios::Resource
       find_object(obj, @resources)
     end
@@ -153,25 +146,14 @@ class Nagios
     Hash[@hostdependencies.sort]
   end
 
-  def hostescalations
-    Hash[@hostescalations.sort]
-  end
-
   def hostgroups
     Hash[@hostgroups.sort]
   end
 
   def normalize_hostname=(expr)
-    if expr == true
-      @normalize_hostname = true
-    elsif expr =~ /y|yes|true|1/i
-      @normalize_hostname = true
-    else
-      @normalize_hostname = false
-    end
+    @normalize_hostname = (expr == true || !(expr =~ /y|yes|true|1/).nil?)
   end
 
-  # rubocop:disable MethodLength
   def push(obj)
     case obj
     when Chef::Node
@@ -195,16 +177,16 @@ class Nagios
     when Nagios::Hostdependency
       push_object(obj)
     when Nagios::Hostescalation
-      push_object(obj)
+      @hostescalations.push(obj)
     when Nagios::Servicedependency
       push_object(obj)
     when Nagios::Serviceescalation
-      push_object(obj)
+      @serviceescalations.push(obj)
     when Nagios::Resource
       push_object(obj)
     else
       Chef::Log.fail("Nagios error: Pushing unknown object: #{obj.class} into Nagios.instance")
-      fail
+      raise
     end
   end
   # rubocop:enable MethodLength
@@ -227,10 +209,6 @@ class Nagios
 
   def servicedependencies
     Hash[@servicedependencies.sort]
-  end
-
-  def serviceescalations
-    Hash[@serviceescalations.sort]
   end
 
   def servicegroups
@@ -279,7 +257,6 @@ class Nagios
     nil
   end
 
-  # rubocop:disable MethodLength
   def push_node(obj)
     groups = get_groups(obj)
     hostname = get_hostname(obj)

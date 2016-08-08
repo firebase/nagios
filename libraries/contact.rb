@@ -19,7 +19,6 @@
 
 require_relative 'base'
 
-# rubocop:disable ClassLength
 class Nagios
   #
   # This class holds all methods with regard to contact options,
@@ -52,6 +51,7 @@ class Nagios
       @host_notification_commands = []
       @service_notification_commands = []
       @custom_options = {}
+      super()
     end
 
     def contactgroups_list
@@ -100,6 +100,26 @@ class Nagios
         push_object(obj, @custom_options)
       end
     end
+
+    def pop(obj)
+      return if obj == self
+      case obj
+      when Nagios::Contactgroup
+        if @contactgroups.keys?(obj.to_s)
+          pop_object(obj, @contactgroups)
+          pop(self, obj)
+        end
+      when Nagios::Timeperiod
+        @host_notification_period = nil if obj == @host_notification_period
+        @service_notification_period = nil if obj == @service_notification_period
+      when Nagios::CustomOption
+        if @custom_options.keys?(obj.to_s)
+          pop_object(obj, @custom_options)
+          pop(self, obj)
+        end
+      end
+    end
+    # rubocop:enable MethodLength
 
     def service_notification_commands
       get_commands(@service_notification_commands)
@@ -177,7 +197,6 @@ class Nagios
 
     private
 
-    # rubocop:disable MethodLength
     def config_options
       {
         'name'                          => 'name',

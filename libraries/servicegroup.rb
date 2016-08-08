@@ -38,6 +38,7 @@ class Nagios
       @servicegroup_name = servicegroup_name
       @members = {}
       @servicegroup_members = {}
+      super()
     end
 
     def definition
@@ -63,6 +64,23 @@ class Nagios
         push_object(obj, @servicegroup_members)
       end
     end
+
+    def pop(obj)
+      return if obj == self
+      case obj
+      when Nagios::Service
+        if @members.keys?(obj.to_s)
+          pop_object(obj, @members)
+          pop(self, obj)
+        end
+      when Nagios::Servicegroup
+        if @servicegroup_members.keys?(obj.to_s)
+          pop_object(obj, @servicegroup_members)
+          pop(self, obj)
+        end
+      end
+    end
+    # rubocop:enable MethodLength
 
     def self.create(name)
       Nagios.instance.find(Nagios::Servicegroup.new(name))
@@ -92,8 +110,8 @@ class Nagios
 
     def convert_hostgroup_hash(hash)
       result = []
-      hash.each do |group_name, group_members|
-        group_members.each do |member|
+      hash.sort.to_h.each do |group_name, group_members|
+        group_members.sort.each do |member|
           result << member
           result << group_name
         end
@@ -105,13 +123,18 @@ class Nagios
       hostgroup_hash = {}
       @members.each do |service_name, service_obj|
         hostgroup_array = []
-        service_obj.hostgroups.each do |_, hostgroup_obj|
-          hostgroup_obj.members.each { |host_name, _| hostgroup_array << host_name }
+        service_obj.hostgroups.each do |hostgroup_name, hostgroup_obj|
+          if service_obj.not_modifiers['hostgroup_name'][hostgroup_name] != '!'
+            hostgroup_array += hostgroup_obj.members.keys
+          else
+            hostgroup_array -= hostgroup_obj.members.keys
+          end
         end
         hostgroup_hash[service_name] = hostgroup_array
       end
       convert_hostgroup_hash(hostgroup_hash)
     end
+    # rubocop:enable MethodLength
 
     def merge_members(obj)
       obj.members.each { |m| push(m) }

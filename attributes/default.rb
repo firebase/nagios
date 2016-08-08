@@ -1,10 +1,10 @@
 #
 # Author:: Seth Chisamore <schisamo@getchef.com>
-# Author:: Tim Smith <tim@cozy.co>
+# Author:: Tim Smith <tsmith@chef.io>
 # Cookbook Name:: nagios
 # Attributes:: default
 #
-# Copyright 2011-2013, Chef Software, Inc.
+# Copyright 2011-2016, Chef Software, Inc.
 # Copyright 2013-2014, Limelight Networks, Inc
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,11 +34,7 @@ case node['platform_family']
 when 'debian'
   default['nagios']['plugin_dir'] = '/usr/lib/nagios/plugins'
 when 'rhel', 'fedora'
-  if node['kernel']['machine'] == 'i686'
-    default['nagios']['plugin_dir'] = '/usr/lib/nagios/plugins'
-  else
-    default['nagios']['plugin_dir'] = '/usr/lib64/nagios/plugins'
-  end
+  default['nagios']['plugin_dir'] = node['kernel']['machine'] == 'i686' ? '/usr/lib/nagios/plugins' : '/usr/lib64/nagios/plugins'
 else
   default['nagios']['plugin_dir'] = '/usr/lib/nagios/plugins'
 end
@@ -53,7 +49,7 @@ when 'rhel', 'fedora'
   default['nagios']['log_dir']       = '/var/log/nagios'
   default['nagios']['cache_dir']     = '/var/log/nagios'
   default['nagios']['state_dir']     = '/var/log/nagios'
-  default['nagios']['run_dir']       = '/var/run'
+  default['nagios']['run_dir']       = '/var/run/nagios'
   default['nagios']['docroot']       = '/usr/share/nagios/html'
   default['nagios']['cgi-bin']       = '/usr/lib64/nagios/cgi-bin/'
 else
@@ -79,11 +75,8 @@ when 'debian'
 when 'rhel', 'fedora'
   default['nagios']['cgi-path'] = '/nagios/cgi-bin/'
   # install via source on RHEL releases less than 6, otherwise use packages
-  if node['platform_family'] == 'rhel' && node['platform_version'].to_i < 6
-    default['nagios']['server']['install_method'] = 'source'
-  else
-    default['nagios']['server']['install_method'] = 'package'
-  end
+  method = node['platform_family'] == 'rhel' && node['platform_version'].to_i < 6 ? 'source' : 'package'
+  default['nagios']['server']['install_method'] = method
   default['nagios']['server']['service_name']   = 'nagios'
   default['nagios']['server']['mail_command']   = '/bin/mail'
 else
@@ -165,6 +158,11 @@ default['nagios']['ldap_bind_dn']       = nil
 default['nagios']['ldap_bind_password'] = nil
 default['nagios']['ldap_url']           = nil
 default['nagios']['ldap_authoritative'] = nil
+default['nagios']['ldap_group_attribute'] = nil
+default['nagios']['ldap_group_attribute_is_dn'] = nil
+default['nagios']['ldap_verify_cert'] = nil
+default['nagios']['ldap_trusted_mode'] = nil
+default['nagios']['ldap_trusted_global_cert'] = nil
 
 default['nagios']['templates'] = Mash.new
 
@@ -206,6 +204,7 @@ default['nagios']['cgi']['authorized_for_all_service_commands']      = '*'
 default['nagios']['cgi']['authorized_for_all_host_commands']         = '*'
 default['nagios']['cgi']['default_statusmap_layout']                 = 5
 default['nagios']['cgi']['default_statuswrl_layout']                 = 4
+default['nagios']['cgi']['result_limit']                             = 100
 default['nagios']['cgi']['escape_html_tags']                         = 0
 default['nagios']['cgi']['action_url_target']                        = '_blank'
 default['nagios']['cgi']['notes_url_target']                         = '_blank'

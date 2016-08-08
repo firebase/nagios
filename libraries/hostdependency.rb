@@ -42,6 +42,7 @@ class Nagios
       @hostgroup_name           = {}
       @dependent_host_name      = {}
       @dependent_hostgroup_name = {}
+      super()
     end
 
     def definition
@@ -92,6 +93,41 @@ class Nagios
       end
     end
 
+    def pop(obj)
+      return if obj == self
+      case obj
+      when Nagios::Host
+        if @host_name.keys?(obj.to_s)
+          pop_object(obj, @host_name)
+          pop(self, obj)
+        end
+      when Nagios::Hostgroup
+        if @hostgroup_name.keys?(obj.to_s)
+          pop_object(obj, @hostgroup_name)
+          pop(self, obj)
+        end
+      when Nagios::Timeperiod
+        @dependency_period = nil if @dependency_period == obj
+      end
+    end
+
+    def pop_dependency(obj)
+      return if obj == self
+      case obj
+      when Nagios::Host
+        if @dependent_host_name.keys?(obj.to_s)
+          pop_object(obj, @dependent_host_name)
+          pop(self, obj)
+        end
+      when Nagios::Hostgroup
+        if @dependent_hostgroup_name.keys?(obj.to_s)
+          pop_object(obj, @dependent_hostgroup_name)
+          pop(self, obj)
+        end
+      end
+    end
+    # rubocop:enable MethodLength
+
     def self.create(name)
       Nagios.instance.find(Nagios::Hostdependency.new(name))
     end
@@ -119,7 +155,6 @@ class Nagios
 
     private
 
-    # rubocop:disable MethodLength
     def config_options
       {
         'dependent_name'                => nil,
@@ -143,3 +178,4 @@ class Nagios
     end
   end
 end
+# rubocop:enable ClassLength

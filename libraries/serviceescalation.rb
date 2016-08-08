@@ -28,6 +28,7 @@ class Nagios
     attr_reader   :service_description,
                   :host_name,
                   :hostgroup_name,
+                  :servicegroup_name,
                   :contacts,
                   :contact_groups
 
@@ -39,16 +40,21 @@ class Nagios
 
     def initialize(name)
       @service_description = name
-      @name                = name
       @contacts            = {}
       @contact_groups      = {}
       @host_name           = {}
       @hostgroup_name      = {}
-      @register            = 0
+      @servicegroup_name   = {}
+      super()
     end
 
     def definition
-      get_definition(configured_options, 'serviceescalation')
+      configured = configured_options
+      unless blank?(servicegroup_name)
+        configured.delete('service_description')
+        configured.delete('host_name')
+      end
+      get_definition(configured, 'serviceescalation')
     end
 
     def contacts_list
@@ -67,21 +73,27 @@ class Nagios
       @hostgroup_name.values.map(&:to_s).sort.join(',')
     end
 
+    def servicegroup_name_list
+      @servicegroup_name.values.map(&:to_s).sort.join(',')
+    end
+
     def import(hash)
       update_options(hash)
       update_members(hash, 'contacts', Nagios::Contact)
       update_members(hash, 'contact_groups', Nagios::Contactgroup)
       update_members(hash, 'host_name', Nagios::Host)
       update_members(hash, 'hostgroup_name', Nagios::Hostgroup)
+      update_members(hash, 'servicegroup_name', Nagios::Servicegroup)
     end
 
-    # rubocop:disable MethodLength
     def push(obj)
       case obj
       when Nagios::Host
         push_object(obj, @host_name)
       when Nagios::Hostgroup
         push_object(obj, @hostgroup_name)
+      when Nagios::Servicegroup
+        push_object(obj, @servicegroup_name)
       when Nagios::Contact
         push_object(obj, @contacts)
       when Nagios::Contactgroup
@@ -90,11 +102,40 @@ class Nagios
         @escalation_period = obj
       end
     end
-    # rubocop:enable MethodLength
 
-    def self.create(name)
-      Nagios.instance.find(Nagios::Serviceescalation.new(name))
+    def pop(obj)
+      return if obj == self
+      case obj
+      when Nagios::Host
+        if @host_name.keys?(obj.to_s)
+          pop_object(obj, @host_name)
+          pop(self, obj)
+        end
+      when Nagios::Hostgroup
+        if @hostgroup_name.keys?(obj.to_s)
+          pop_object(obj, @hostgroup_name)
+          pop(self, obj)
+        end
+      when Nagios::Servicegroup
+        if @servicegroup_name.keys?(obj.to_s)
+          pop_object(obj, @servicegroup_name)
+          pop(self, obj)
+        end
+      when Nagios::Contact
+        if @contacts.keys?(obj.to_s)
+          pop_object(obj, @contacts)
+          pop(self, obj)
+        end
+      when Nagios::Contactgroup
+        if @contact_groups.keys?(obj.to_s)
+          pop_object(obj, @contact_groups)
+          pop(self, obj)
+        end
+      when Nagios::Timeperiod
+        @escalation_period = nil if @escalation_period == obj
+      end
     end
+    # rubocop:enable MethodLength
 
     def to_s
       service_description
@@ -123,19 +164,22 @@ class Nagios
 
     private
 
-    # rubocop:disable MethodLength
     def config_options
       {
-        'service_description'   => 'service_description',
-        'contacts_list'         => 'contacts',
-        'contact_groups_list'   => 'contact_groups',
-        'escalation_period'     => 'escalation_period',
-        'host_name_list'        => 'host_name',
-        'hostgroup_name_list'   => 'hostgroup_name',
-        'escalation_options'    => 'escalation_options',
-        'first_notification'    => 'first_notification',
-        'last_notification'     => 'last_notification',
-        'notification_interval' => 'notification_interval'
+        'name'                   => 'name',
+        'use'                    => 'use',
+        'service_description'    => 'service_description',
+        'contacts_list'          => 'contacts',
+        'contact_groups_list'    => 'contact_groups',
+        'escalation_period'      => 'escalation_period',
+        'host_name_list'         => 'host_name',
+        'hostgroup_name_list'    => 'hostgroup_name',
+        'servicegroup_name_list' => 'servicegroup_name',
+        'escalation_options'     => 'escalation_options',
+        'first_notification'     => 'first_notification',
+        'last_notification'      => 'last_notification',
+        'notification_interval'  => 'notification_interval',
+        'register'               => 'register'
       }
     end
     # rubocop:enable MethodLength
@@ -145,6 +189,7 @@ class Nagios
       obj.host_name.each { |m| push(m) }
       obj.contact_groups.each { |m| push(m) }
       obj.hostgroup_name.each { |m| push(m) }
+      obj.servicegroup_name.each { |m| push(m) }
     end
   end
 end

@@ -38,6 +38,7 @@ class Nagios
       @hostgroup_name = hostgroup_name
       @members = {}
       @hostgroup_members = {}
+      super()
     end
 
     def definition
@@ -67,6 +68,23 @@ class Nagios
       end
     end
 
+    def pop(obj)
+      return if obj == self
+      case obj
+      when Nagios::Host
+        if @members.key?(obj.to_s)
+          pop_object(obj, @members)
+          obj.pop(obj)
+        end
+      when Nagios::Hostgroup
+        if @hostgroups_members.key?(obj.to_s)
+          pop_object(obj, @hostgroup_members)
+          obj.pop(obj)
+        end
+      end
+    end
+    # rubocop:enable MethodLength
+
     def self.create(name)
       Nagios.instance.find(Nagios::Hostgroup.new(name))
     end
@@ -77,7 +95,6 @@ class Nagios
 
     private
 
-    # rubocop:disable MethodLength
     def config_options
       {
         'name'                   => 'name',
